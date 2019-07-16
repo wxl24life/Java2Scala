@@ -15,6 +15,6 @@ public class Main {
         filterChain.addFilter(new StatFilter());
 
         filterChain.dataSource_connect();
-        // chain, state, log
+        // log, stat, chain
     }
 }
