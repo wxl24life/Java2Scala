@@ -1,0 +1,44 @@
+@startuml
+
+actor main
+
+/' autonumber used to automatically add number to messages '/
+autonumber
+
+main --> filterChain : addFilter()
+activate filterChain
+
+main --> filterChain : addFilter()
+main --> filterChain : dataSource_connect()
+
+/'use ||| to indicate some spacing in the diagram'/
+
+|||
+filterChain -> filterChain : nextFilter()
+filterChain -> logFilter : dataSource_getConnection()
+
+activate logFilter
+logFilter -> System.out : print
+System.out --> logFilter : ok
+logFilter -[#0000FF]> filterChain : dataSource_connect()
+deactivate logFilter
+
+filterChain -> filterChain : nextFilter()
+filterChain -> statFilter: dataSource_getConnection()
+
+activate statFilter
+statFilter --> System.out : print
+System.out --> statFilter : ok
+statFilter -[#0000FF]> filterChain : dataSource_connect()
+deactivate statFilter
+
+
+filterChain -> System.out : print
+System.out --> filterChain : ok
+filterChain --> main : done dataSource_connect()
+deactivate filterChain
+
+
+participant System.out
+
+@enduml

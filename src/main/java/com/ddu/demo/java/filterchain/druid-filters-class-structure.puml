@@ -1,0 +1,24 @@
+@startuml
+
+abstract class FilterAdaptor
+abstract class FilterEventAdaptor
+interface Filter
+
+Filter <|-- FilterAdaptor
+FilterAdaptor <|-- FilterEventAdaptor
+
+FilterEventAdaptor <|-- LogFilter
+FilterEventAdaptor <|-- StatFilter
+
+LogFilter <|-- Log4jFilter
+LogFilter <|-- Log4j2Filter
+LogFilter <|-- CommonsLogFilter
+LogFilter <|-- Slf4JFilter
+
+StatFilter <|-- MergeStatFilter
+
+FilterAdaptor <|-- ConfigFilter
+FilterAdaptor <|-- WallFilter
+FilterAdaptor <|-- EncodingConvertFilter
+
+@enduml

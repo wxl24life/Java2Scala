@@ -1,0 +1,42 @@
+@startuml
+
+interface Filter {
+    dataSource_getConnection(FilterChain chain)
+}
+
+interface FilterChain {
+    dataSource_connect()
+}
+
+FilterChain <|-- FilterChainImpl
+Filter <|-- LogFilter
+Filter <|-- StatFilter
+
+
+class LogFilter {
+    dataSource_getConnection(FilterChain chain)
+}
+class StatFilter {
+    dataSource_getConnection(FilterChain chain)
+}
+
+class FilterChainImpl {
+    List<Filter> filters
+    int pos
+    int size
+
+    void dataSource_connect()
+    void addFilter(Filter filter)
+    Filter nextFilter()
+}
+
+FilterChainImpl *- Filter: have n
+LogFilter ..> FilterChainImpl : uses
+StatFilter ..> FilterChainImpl : uses
+
+note bottom of LogFilter : recursive call of \nFilterChain.dataSource_connect()
+
+note bottom of StatFilter : recursive call of \nFilterChain.dataSource_connect()
+
+note left of FilterChainImpl : dataSource_connect() : \nnextFilter().dataSource_getConnection(this)
+@enduml
