@@ -1,7 +1,5 @@
 package com.ddu.demo.scala
 
-import scala.language.postfixOps
-
 /**
   * @author wxl24life
   */
