@@ -1,0 +1,14 @@
+project
+target
+.manager
+.DS_Store
+.scala_dependencies
+
+.classpath
+.project
+*.iws
+*.iml
+*.ipr
+.idea/*
+
+*.class
