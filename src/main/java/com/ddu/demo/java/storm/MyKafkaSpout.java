@@ -1,18 +1,17 @@
 package com.ddu.demo.java.storm;
 
+import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author wxl24life
@@ -32,6 +31,9 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
+        // In order to prevent from consuming duplicated messages or lost message while consuming,
+        // we set enable.auto.commit to false to commit manually
+        properties.setProperty("enable.auto.commit", "false");
 
         consumer = new KafkaConsumer<K, V>(properties);
         // 订阅单一主题
@@ -53,13 +55,38 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                 // 3. 心跳也是从轮询里发送出去的
                 // 所以，要确保在轮训期间所做的任何处理工作尽快完成
                 ConsumerRecords<K, V> records = consumer.poll(100);
+
+                /*Set<TopicPartition> topicPartitions = records.partitions();
+                for (TopicPartition tp : topicPartitions) {
+                    tp.partition(), tp.topic();
+                }*/
                 for (ConsumerRecord<K, V> record : records) {
+                    String topic = record.topic();
+                    record.partition();
+                    record.offset();
                     this.collector.emit(Arrays.asList(record.key(), record.value()));
                 }
+                /*try {
+                    // 同步提交
+                    // broker 端做出回应之前会一直阻塞
+                    consumer.commitSync();
+                } catch (CommitFailedException e) {
+                    // 在抛出不可恢复异常之前，commitSync() 会一直重试（碰到可恢复异常时）
+                    e.printStackTrace();
+                }*/
+                consumer.commitAsync(); // 异步提交，碰到可恢复异常时也不会重试
             }
+        } catch (Exception e) {
+            // log error
         } finally {
-            // 退出关闭 consumer，随之关闭网络连接和 socket，并会立即触发一次再均衡
-            consumer.close();
+            // // 退出关闭 consumer，随之关闭网络连接和 socket，并会立即触发一次再均衡
+            // consumer.close();
+            try {
+                // 异步加同步的方式 尽量保证消息被 commit
+                consumer.commitSync();
+            } finally {
+                consumer.close();
+            }
         }
     }
 
