@@ -43,7 +43,7 @@ public class MyKafkaSpout<K, V> extends BaseRichSpout {
             while (true) {
                 ConsumerRecords<K, V> records = consumer.poll(100);
                 for (ConsumerRecord<K, V> record : records) {
-                    this.collector.emit(record.key().toString(), Arrays.asList(record.key(), record.value()));
+                    this.collector.emit(Arrays.asList(record.key(), record.value()));
                 }
             }
         } finally {
