@@ -17,14 +17,15 @@ import java.util.Properties;
 /**
  * @author wxl24life
  */
-public class MyKafkaSpout<K, V> extends BaseRichSpout {
+class MyKafkaSpout<K, V> extends BaseRichSpout {
 
-    SpoutOutputCollector collector;
+    private SpoutOutputCollector collector;
 
-    Properties properties;
-    KafkaConsumer<K, V> consumer;
+    private Properties properties;
+    private KafkaConsumer<K, V> consumer;
 
-    public MyKafkaSpout(Properties properties) {
+    // constructor
+    MyKafkaSpout(Properties properties) {
         this.properties = properties;
     }
 
