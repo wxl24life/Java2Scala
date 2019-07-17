@@ -42,12 +42,23 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
     public void nextTuple() {
         try {
             while (true) {
+                // 使用 poll 方法持续轮询，参数代表了超时时间（单位 ms），在 consumer 缓冲区里没有可用数据时会发生阻塞，
+                // 超时参数用于控制阻塞的时间，指定了方法在多久之后可以返回，不管有无数据都返回
+                // 超时时间的设定取决于应用程序对响应速度的要求，比如在多长时间内把控制权交给轮询线程
+                // 如果设置成 poll(0)，不阻塞，直接返回
+
+                // 关于 kafka consumer 轮询的进一步说明
+                // 1. 轮询除了获取分区数据，在首次调用新消费者的 poll() 方法时，会负责查找 GroupCoordinator，然后加入 group，并接受分配过来的分区
+                // 2. 如果发生 rebalance，整个过程也是在轮询期间完成的
+                // 3. 心跳也是从轮询里发送出去的
+                // 所以，要确保在轮训期间所做的任何处理工作尽快完成
                 ConsumerRecords<K, V> records = consumer.poll(100);
                 for (ConsumerRecord<K, V> record : records) {
                     this.collector.emit(Arrays.asList(record.key(), record.value()));
                 }
             }
         } finally {
+            // 退出关闭 consumer，随之关闭网络连接和 socket，并会立即触发一次再均衡
             consumer.close();
         }
     }
