@@ -23,6 +23,8 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
     private Properties properties;
     private KafkaConsumer<K, V> consumer;
 
+    private Map<TopicPartition, List<ConsumerRecord<K, V>>> waitingToEmitted;
+
     // constructor
     MyKafkaSpout(Properties properties) {
         this.properties = properties;
@@ -34,6 +36,7 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
         // In order to prevent from consuming duplicated messages or lost message while consuming,
         // we set enable.auto.commit to false to commit manually
         properties.setProperty("enable.auto.commit", "false");
+        waitingToEmitted = new HashMap<>();
 
         consumer = new KafkaConsumer<K, V>(properties);
         // 订阅单一主题
@@ -54,39 +57,49 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                 // 2. 如果发生 rebalance，整个过程也是在轮询期间完成的
                 // 3. 心跳也是从轮询里发送出去的
                 // 所以，要确保在轮训期间所做的任何处理工作尽快完成
-                ConsumerRecords<K, V> records = consumer.poll(100);
+                if (waitingToEmitted.isEmpty()) {
+                    ConsumerRecords<K, V> records = consumer.poll(100);
 
-                /*Set<TopicPartition> topicPartitions = records.partitions();
-                for (TopicPartition tp : topicPartitions) {
-                    tp.partition(), tp.topic();
-                }*/
-                for (ConsumerRecord<K, V> record : records) {
-                    String topic = record.topic();
-                    record.partition();
-                    record.offset();
-                    this.collector.emit(Arrays.asList(record.key(), record.value()));
+                    /*Set<TopicPartition> topicPartitions = records.partitions();
+                    for (TopicPartition tp : topicPartitions) {
+                        tp.partition(), tp.topic();
+                    }*/
+                    for (ConsumerRecord<K, V> record : records) {
+                        TopicPartition topicPartition = new TopicPartition(record.topic(), record.partition());
+                        if (waitingToEmitted.containsKey(topicPartition)) {
+                            waitingToEmitted.get(topicPartition).add(record);
+                        } else {
+                            waitingToEmitted.put(topicPartition, Collections.singletonList(record));
+                        }
+                    }
+                } else {
+                    emitIfWaitingNotEmmited();
                 }
-                /*try {
-                    // 同步提交
-                    // broker 端做出回应之前会一直阻塞
-                    consumer.commitSync();
-                } catch (CommitFailedException e) {
-                    // 在抛出不可恢复异常之前，commitSync() 会一直重试（碰到可恢复异常时）
-                    e.printStackTrace();
-                }*/
-                consumer.commitAsync(); // 异步提交，碰到可恢复异常时也不会重试
+                // consumer.commitAsync(); // 异步提交，碰到可恢复异常时也不会重试
             }
         } catch (Exception e) {
             // log error
+            e.printStackTrace();
         } finally {
-            // // 退出关闭 consumer，随之关闭网络连接和 socket，并会立即触发一次再均衡
-            // consumer.close();
-            try {
-                // 异步加同步的方式 尽量保证消息被 commit
-                consumer.commitSync();
-            } finally {
-                consumer.close();
+            // 退出关闭 consumer，随之关闭网络连接和 socket，并会立即触发一次再均衡
+            consumer.close();
+        }
+    }
+
+    // ======== emit  =========
+    private void emitIfWaitingNotEmmited() {
+        Iterator<List<ConsumerRecord<K, V>>> waitingToEmitIter = waitingToEmitted.values().iterator();
+        while (waitingToEmitIter.hasNext()) {
+            List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmitIter.next();
+            if (!waitingToEmitForTp.isEmpty()) {
+                ConsumerRecord<K, V> consumerRecord = waitingToEmitForTp.remove(0);
+                this.collector.emit(Arrays.asList(consumerRecord.topic(), consumerRecord.partition(), consumerRecord.offset(),
+                        consumerRecord.key(), consumerRecord.value()));
+                this.consumer.commitSync();
+                break;
             }
+            // remove 跟 hasNext 方法一起使用
+            waitingToEmitIter.remove();
         }
     }
 
