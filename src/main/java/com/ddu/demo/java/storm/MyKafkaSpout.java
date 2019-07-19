@@ -69,7 +69,9 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                         if (waitingToEmitted.containsKey(topicPartition)) {
                             waitingToEmitted.get(topicPartition).add(record);
                         } else {
-                            waitingToEmitted.put(topicPartition, Collections.singletonList(record));
+                            // List<ConsumerRecord<K, V>> list = new ArrayList<>();
+                            // list.add(record);
+                            waitingToEmitted.put(topicPartition, new ArrayList<>(Collections.singletonList(record)));
                         }
                     }
                 } else {
