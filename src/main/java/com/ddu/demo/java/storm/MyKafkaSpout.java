@@ -107,6 +107,6 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("key", "value"));
+        outputFieldsDeclarer.declare(new Fields("topic", "partition", "offset", "key", "value"));
     }
 }
