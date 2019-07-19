@@ -57,26 +57,12 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
             // 3. 心跳也是从轮询里发送出去的
             // 所以，要确保在轮训期间所做的任何处理工作尽快完成
             if (waitingToEmitted.isEmpty()) {
-                ConsumerRecords<K, V> records = consumer.poll(100);
-
-                /*Set<TopicPartition> topicPartitions = records.partitions();
-                for (TopicPartition tp : topicPartitions) {
-                    tp.partition(), tp.topic();
-                }*/
-                for (ConsumerRecord<K, V> record : records) {
-                    TopicPartition topicPartition = new TopicPartition(record.topic(), record.partition());
-                    if (waitingToEmitted.containsKey(topicPartition)) {
-                        waitingToEmitted.get(topicPartition).add(record);
-                    } else {
-                        // List<ConsumerRecord<K, V>> list = new ArrayList<>();
-                        // list.add(record);
-                        waitingToEmitted.put(topicPartition, new ArrayList<>(Collections.singletonList(record)));
-                    }
+                ConsumerRecords<K, V> consumerRecords = consumer.poll(100);
+                for (TopicPartition tp : consumerRecords.partitions()) {
+                    waitingToEmitted.put(tp, new ArrayList<>(consumerRecords.records(tp)));
                 }
             }
-
             emitIfWaitingNotEmmited();
-
             // consumer.commitAsync(); // 异步提交，碰到可恢复异常时也不会重试
         } catch (Exception e) {
             // log error
