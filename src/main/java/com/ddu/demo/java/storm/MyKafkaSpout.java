@@ -23,12 +23,17 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
 
     private Properties properties;
     private KafkaConsumer<K, V> consumer;
+    private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.LATEST;
 
     private Map<TopicPartition, List<ConsumerRecord<K, V>>> waitingToEmitted;
 
     // constructor
     MyKafkaSpout(Properties properties) {
         this.properties = properties;
+    }
+
+    public void setFirstPollOffsetStrategy(FirstPollOffsetStrategy firstPollOffsetStrategy) {
+        this.firstPollOffsetStrategy = firstPollOffsetStrategy;
     }
 
     @Override
@@ -68,11 +73,22 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                 // Get the last committed offset for this partition
                 OffsetAndMetadata committedOffsetAndMetadata = consumer.committed(tp);
                 if (committedOffsetAndMetadata != null) {
-                    consumer.seek(tp, committedOffsetAndMetadata.offset()); // no need to +1
+                    if (firstPollOffsetStrategy == FirstPollOffsetStrategy.EARLIEST) {
+                        consumer.seekToBeginning(Collections.singleton(tp));
+                    } else if (firstPollOffsetStrategy == FirstPollOffsetStrategy.LATEST) {
+                        consumer.seekToEnd(Collections.singleton(tp));
+                    } else {
+                        consumer.seek(tp, committedOffsetAndMetadata.offset()); // no need to +1
+                    }
                 } else {
-                    // default consume policy for newly added consumer and topic partion
-                    consumer.seekToEnd(Collections.singleton(tp));
+                    if (firstPollOffsetStrategy == FirstPollOffsetStrategy.EARLIEST) {
+                        consumer.seekToBeginning(Collections.singleton(tp));
+                    } else if (firstPollOffsetStrategy == FirstPollOffsetStrategy.LATEST) {
+                        consumer.seekToEnd(Collections.singleton(tp));
+                    }
                 }
+                LOG.info("Set consumer position to [{}] for topic-partition [{}] with [{}] and committed offset [{}]",
+                        consumer.position(tp), tp, firstPollOffsetStrategy, committedOffsetAndMetadata);
             }
 
             LOG.info("Initialization complete");

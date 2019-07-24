@@ -25,6 +25,9 @@ public class CompareDemoToplogy {
         kafkaBuilder.setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         kafkaBuilder.setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
 
+        // test FirstPollOffsetStrategy
+        kafkaBuilder.setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST);
+
         KafkaSpout<String, String> kafkaSpout = new KafkaSpout<>(kafkaBuilder.build());
         builder.setSpout("kafka", kafkaSpout, 2);
         builder.setBolt("print", new DemoBolt(), 2).shuffleGrouping("kafka");

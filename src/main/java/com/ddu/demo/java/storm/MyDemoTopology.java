@@ -29,6 +29,7 @@ public class MyDemoTopology {
         // kafkaProps.put("fetch.min.bytes", "20");
 
         MyKafkaSpout<String, String> kafkaSpout = new MyKafkaSpout<>(kafkaProps);
+        kafkaSpout.setFirstPollOffsetStrategy(FirstPollOffsetStrategy.EARLIEST);
         builder.setSpout("kafka", kafkaSpout, 2);
         builder.setBolt("print", new DemoBolt(), 2).shuffleGrouping("kafka");
 
