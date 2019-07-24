@@ -73,6 +73,10 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                 // Get the last committed offset for this partition
                 OffsetAndMetadata committedOffsetAndMetadata = consumer.committed(tp);
                 if (committedOffsetAndMetadata != null) {
+                    // In fact we only want to use FirstPollOffsetStrategy when the topology is first deployed.
+                    // So we need some strategy to tell us if this topology has just deployed
+                    // Otherwise when firstPollOffsetStrategy is set to EARLIEST or LATEST, we will process
+                    // dupilcated messages or lost messages.
                     if (firstPollOffsetStrategy == FirstPollOffsetStrategy.EARLIEST) {
                         consumer.seekToBeginning(Collections.singleton(tp));
                     } else if (firstPollOffsetStrategy == FirstPollOffsetStrategy.LATEST) {
@@ -81,6 +85,7 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                         consumer.seek(tp, committedOffsetAndMetadata.offset()); // no need to +1
                     }
                 } else {
+                    // No offset commits has ever been done for this consumer group and topic-partion
                     if (firstPollOffsetStrategy == FirstPollOffsetStrategy.EARLIEST
                             || firstPollOffsetStrategy == FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST) {
                         consumer.seekToBeginning(Collections.singleton(tp));
