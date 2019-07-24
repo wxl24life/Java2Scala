@@ -1,9 +1,6 @@
 package com.ddu.demo.java.storm;
 
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -68,6 +65,9 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
             newPartitions.removeAll(previousAssignment);
             for (TopicPartition tp : newPartitions) {
                 LOG.info("Found new topic = {}, partition = {}", tp.topic(), tp.partition());
+                // Get the last committed offset for this partition
+                OffsetAndMetadata committedOffsetAndMetadata = consumer.committed(tp);
+                consumer.seek(tp, committedOffsetAndMetadata.offset()); // no need to +1
             }
 
             LOG.info("Initialization complete");
