@@ -23,7 +23,7 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
 
     private Properties properties;
     private KafkaConsumer<K, V> consumer;
-    private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.LATEST;
+    private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
 
     private Map<TopicPartition, List<ConsumerRecord<K, V>>> waitingToEmitted;
 
@@ -81,9 +81,11 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                         consumer.seek(tp, committedOffsetAndMetadata.offset()); // no need to +1
                     }
                 } else {
-                    if (firstPollOffsetStrategy == FirstPollOffsetStrategy.EARLIEST) {
+                    if (firstPollOffsetStrategy == FirstPollOffsetStrategy.EARLIEST
+                            || firstPollOffsetStrategy == FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST) {
                         consumer.seekToBeginning(Collections.singleton(tp));
-                    } else if (firstPollOffsetStrategy == FirstPollOffsetStrategy.LATEST) {
+                    } else if (firstPollOffsetStrategy == FirstPollOffsetStrategy.LATEST
+                            || firstPollOffsetStrategy == FirstPollOffsetStrategy.UNCOMMITTED_LATEST) {
                         consumer.seekToEnd(Collections.singleton(tp));
                     }
                 }
