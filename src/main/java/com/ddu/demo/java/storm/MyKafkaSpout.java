@@ -1,6 +1,6 @@
 package com.ddu.demo.java.storm;
 
-import org.apache.kafka.clients.consumer.CommitFailedException;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -10,6 +10,8 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -17,8 +19,10 @@ import java.util.*;
  * @author wxl24life
  */
 class MyKafkaSpout<K, V> extends BaseRichSpout {
+    private static final Logger LOG = LoggerFactory.getLogger(MyKafkaSpout.class);
 
     private SpoutOutputCollector collector;
+    private TopologyContext context;
 
     private Properties properties;
     private KafkaConsumer<K, V> consumer;
@@ -33,6 +37,7 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
+        this.context = context;
         // In order to prevent from consuming duplicated messages or lost message while consuming,
         // we set enable.auto.commit to false to commit manually
         properties.setProperty("enable.auto.commit", "false");
@@ -40,7 +45,33 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
 
         consumer = new KafkaConsumer<K, V>(properties);
         // 订阅单一主题
-        consumer.subscribe(Collections.singleton(properties.getProperty("topic")));
+        consumer.subscribe(Collections.singleton(properties.getProperty("topic")), new KafkaSpoutConsumerRebalanceListener());
+    }
+
+    // kafka rebalance listener, do some work when consumer rebalance happens
+    private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {
+
+        private Collection<TopicPartition> previousAssignment = new HashSet<>();
+
+        @Override
+        public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+            previousAssignment = partitions;
+        }
+
+        @Override
+        public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+            LOG.info("Partitions reassignment. [task-ID={}, consumer-group={}, consumer={}, topic-partitions={}]",
+                    context.getThisTaskId(), properties.get("group.id"), consumer, partitions);
+
+            // do initialize here!
+            Set<TopicPartition> newPartitions = new HashSet<>(partitions);
+            newPartitions.removeAll(previousAssignment);
+            for (TopicPartition tp : newPartitions) {
+                LOG.info("Found new topic = {}, partition = {}", tp.topic(), tp.partition());
+            }
+
+            LOG.info("Initialization complete");
+        }
     }
 
     @Override
@@ -99,5 +130,6 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
         // 退出关闭 consumer，随之关闭网络连接和 socket，并会立即触发一次再均衡
         this.consumer.close();
     }
-
 }
+
+
