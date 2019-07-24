@@ -67,7 +67,12 @@ class MyKafkaSpout<K, V> extends BaseRichSpout {
                 LOG.info("Found new topic = {}, partition = {}", tp.topic(), tp.partition());
                 // Get the last committed offset for this partition
                 OffsetAndMetadata committedOffsetAndMetadata = consumer.committed(tp);
-                consumer.seek(tp, committedOffsetAndMetadata.offset()); // no need to +1
+                if (committedOffsetAndMetadata != null) {
+                    consumer.seek(tp, committedOffsetAndMetadata.offset()); // no need to +1
+                } else {
+                    // default consume policy for newly added consumer and topic partion
+                    consumer.seekToEnd(Collections.singleton(tp));
+                }
             }
 
             LOG.info("Initialization complete");
