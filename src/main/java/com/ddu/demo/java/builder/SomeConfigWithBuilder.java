@@ -2,15 +2,16 @@ package com.ddu.demo.java.builder;
 
 /**
  *
- * Builder Pattern demo
+ * A class definition with "GOF" builder design pattern.
+ * The whole structure is a simulation of that in KafkaSpoutConfig from storm-kafka client jar.
  *
  * @author wxl24life
  */
-public class SomeConfig<K, V> {
+public class SomeConfigWithBuilder<K, V> {
     private K foo;
     private V bar;
 
-    public SomeConfig(Builder<K, V> builder) {
+    public SomeConfigWithBuilder(Builder<K, V> builder) {
         this.foo = builder.foo;
         this.bar = builder.bar;
     }
@@ -31,8 +32,8 @@ public class SomeConfig<K, V> {
             return this;
         }
 
-        public SomeConfig<K, V> build() {
-            return new SomeConfig<K, V>(this);
+        public SomeConfigWithBuilder<K, V> build() {
+            return new SomeConfigWithBuilder<K, V>(this);
         }
     }
 
@@ -49,13 +50,23 @@ public class SomeConfig<K, V> {
         return bar;
     }
 
+    @Override
+    public String toString() {
+        return foo + "|" + bar;
+    }
+
     public static void main(String[] args) {
-        Builder<String, String> builder = SomeConfig.builder("fooooo", "barrrr");
-        SomeConfig<String, String> stringSomeConfig = new SomeConfig<>(builder);
-        System.out.println(stringSomeConfig.getFoo() + "|" + stringSomeConfig.getBar());
+        Builder<String, String> builder = SomeConfigWithBuilder.builder("fooooo", "barrrr");
+        SomeConfigWithBuilder<String, String> stringConfig = new SomeConfigWithBuilder<>(builder);
+        System.out.println(stringConfig);
+
+        stringConfig.foo = "foooo";
+        System.out.println(stringConfig);
 
         Builder<byte[], byte[]> byteArrayConfigBuilder = new Builder<>();
         byteArrayConfigBuilder.setFoo("foo".getBytes()).setBar("bar".getBytes());
+        SomeConfigWithBuilder<byte[], byte[]> byteArrayConfig = new SomeConfigWithBuilder<>(byteArrayConfigBuilder);
+        System.out.println(byteArrayConfig);
     }
 
 }
