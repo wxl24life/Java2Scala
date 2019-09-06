@@ -1,4 +1,4 @@
-package com.ddu.demo.java.builder;
+package com.ddu.demo.java.desginpattern.builder;
 
 /**
  *

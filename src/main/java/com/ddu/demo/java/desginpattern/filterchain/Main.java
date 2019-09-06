@@ -1,4 +1,4 @@
-package com.ddu.demo.java.filterchain;
+package com.ddu.demo.java.desginpattern.filterchain;
 
 /**
  * filter chain desgin pattern demo.
