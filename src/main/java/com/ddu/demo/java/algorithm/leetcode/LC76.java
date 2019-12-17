@@ -1,4 +1,4 @@
-package com.ddu.demo.java.algorithm;
+package com.ddu.demo.java.algorithm.leetcode;
 
 import java.util.HashMap;
 import java.util.Map;

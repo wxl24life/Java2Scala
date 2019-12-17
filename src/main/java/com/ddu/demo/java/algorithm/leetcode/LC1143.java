@@ -1,4 +1,4 @@
-package com.ddu.demo.java.algorithm;
+package com.ddu.demo.java.algorithm.leetcode;
 
 /**
  * 寻找两个字符串的最长公共子序列

@@ -1,4 +1,4 @@
-package com.ddu.demo.java.algorithm;
+package com.ddu.demo.java.algorithm.leetcode;
 
 /**
  * @author wxl24life

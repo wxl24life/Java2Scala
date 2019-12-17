@@ -1,4 +1,6 @@
-package com.ddu.demo.java.algorithm;
+package com.ddu.demo.java.algorithm.leetcode;
+
+import com.ddu.demo.java.algorithm.ListNode;
 
 /**
  * @author wxl24life
@@ -28,13 +30,5 @@ public class LC147 {
         }
         maxNode = null;
         return fackeHead.next;
-    }
-}
-
-class ListNode {
-    int val;
-    ListNode next;
-    ListNode(int val) {
-        this.val = val;
     }
 }

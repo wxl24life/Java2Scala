@@ -1,4 +1,4 @@
-package com.ddu.demo.java.algorithm;
+package com.ddu.demo.java.algorithm.leetcode;
 
 import java.util.ArrayList;
 import java.util.Collections;
