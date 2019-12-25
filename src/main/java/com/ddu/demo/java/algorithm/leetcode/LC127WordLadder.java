@@ -3,6 +3,8 @@ package com.ddu.demo.java.algorithm.leetcode;
 import java.util.*;
 
 /**
+ * 2019-12-25 bfs
+ *
  * @author wxl24life
  */
 public class LC127WordLadder {
@@ -15,10 +17,12 @@ public class LC127WordLadder {
         for (String word : list) {
             for (int i = 0; i < word.length(); i++) {
                 // cat => *at, c*t, ca*
-                String tmp = word.replace(word.charAt(i), '*');
-                Set<String> matches = wordsMap.getOrDefault(tmp, new HashSet<String>());
+                // can't use string.replace(char,char) which will replace all occurrence of the first character
+                String template = word.substring(0, i) + '*' + word.substring(i + 1);
+                // String tmp = word.replace(word.charAt(i), '*');
+                Set<String> matches = wordsMap.getOrDefault(template, new HashSet<String>());
                 matches.add(word);
-                wordsMap.put(tmp, matches);
+                wordsMap.put(template, matches);
             }
         }
 
@@ -42,9 +46,11 @@ public class LC127WordLadder {
                 // find all words that are one letter different with each other
                 Set<String> adjacents = new HashSet<>();
                 for (int i = 0; i < word.length(); i++) {
-                    Set<String> tmp = wordsMap.get(word.replace(word.charAt(i), '*'));
-                    if (tmp != null) {
-                        adjacents.addAll(tmp);
+                    // Set<String> tmp = wordsMap.get(word.replace(word.charAt(i), '*'));
+                    String templateWord = word.substring(0, i) + '*' + word.substring(i + 1);
+                    Set<String> tmpSet = wordsMap.get(templateWord);
+                    if (tmpSet != null) {
+                        adjacents.addAll(tmpSet);
                     }
                 }
 
